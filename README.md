@@ -1,3 +1,6 @@
+> Migrated from [github.com/dimsuz/vanilla](https://github.com/dimsuz/vanilla) (original author: Dmitry Suzdalev, MIT).
+> Published versions up to now: `ru.dimsuz:vanilla`. New releases will be published by appKODE under the `ru.kode` group.
+
 # Vanilla
 
 A validation library with distinct separation of pre- and post-validation models, focused on validator composability.
