@@ -1,22 +1,22 @@
 dependencies {
-  implementation(kotlin("stdlib-jdk8"))
   implementation(project(":library"))
-  implementation("com.squareup:kotlinpoet:1.14.2")
-  implementation("com.squareup:kotlinpoet-metadata:1.14.2")
-  implementation("com.squareup:kotlinpoet-ksp:1.14.2")
-  implementation("com.google.devtools.ksp:symbol-processing-api:1.9.10-1.0.13")
+  implementation(libs.kotlinpoet)
+  implementation(libs.kotlinpoet.ksp)
+  compileOnly(libs.ksp.api)
 
-  testImplementation("com.google.truth:truth:1.0.1")
-  testImplementation("com.github.tschuchortdev:kotlin-compile-testing-ksp:1.5.0")
+  testImplementation(libs.ksp.api)
+  testImplementation(libs.kotlin.metadata)
+  testImplementation(libs.truth)
+  testImplementation(libs.kctfork.ksp)
 }
 
-tasks {
-  compileKotlin {
-    kotlinOptions.moduleName = "vanilla-processor"
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview"
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=com.squareup.kotlinpoet.metadata.DelicateKotlinPoetApi"
+kotlin {
+  compilerOptions {
+    moduleName.set("vanilla-processor")
+    optIn.add("com.squareup.kotlinpoet.DelicateKotlinPoetApi")
   }
-  compileTestKotlin {
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview"
-  }
+}
+
+tasks.compileTestKotlin {
+  compilerOptions.optIn.add("org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi")
 }

@@ -1,23 +1,24 @@
 package ru.dimsuz.vanilla.processor
 
 import com.google.common.truth.Truth.assertThat
-import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.squareup.kotlinpoet.metadata.isInternal
-import com.squareup.kotlinpoet.metadata.isNullable
-import com.squareup.kotlinpoet.metadata.isPrivate
-import com.squareup.kotlinpoet.metadata.toKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
+import com.tschuchort.compiletesting.useKsp2
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import kotlinx.metadata.KmClassifier
-import kotlinx.metadata.KmType
+import kotlin.metadata.KmClass
+import kotlin.metadata.KmClassifier
+import kotlin.metadata.KmType
+import kotlin.metadata.Visibility
+import kotlin.metadata.isNullable
+import kotlin.metadata.jvm.KotlinClassMetadata
+import kotlin.metadata.visibility
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-@KotlinPoetMetadataPreview
 class VanillaProcessorTest {
   @Rule
   @JvmField
@@ -380,7 +381,7 @@ class VanillaProcessorTest {
     }
     val createValidateFunction = companionClass?.functions?.find { it.name == "createValidateFunction" }
     assertThat(createValidateFunction).isNotNull()
-    assertThat(createValidateFunction?.flags?.isPrivate).isTrue()
+    assertThat(createValidateFunction?.visibility == Visibility.PRIVATE).isTrue()
     assertThat(createValidateFunction?.returnType?.classifier)
       .isEqualTo(KmClassifier.Class("kotlin/Function1"))
     assertThat(createValidateFunction?.returnType?.arguments?.get(0)?.type?.classifier)
@@ -408,7 +409,7 @@ class VanillaProcessorTest {
     assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
     val builderClass = result.classLoader.loadClass("DraftValidatorBuilder").toKmClass()
-    assertThat(builderClass.flags.isInternal)
+    assertThat(builderClass.visibility == Visibility.INTERNAL)
       .isTrue()
   }
 
@@ -431,7 +432,7 @@ class VanillaProcessorTest {
     assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
     val builderClass = result.classLoader.loadClass("DraftValidatorBuilder").toKmClass()
-    assertThat(builderClass.flags.isInternal)
+    assertThat(builderClass.visibility == Visibility.INTERNAL)
       .isTrue()
   }
 
@@ -456,7 +457,7 @@ class VanillaProcessorTest {
     assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
     val builderClass = result.classLoader.loadClass("HelloDraftValidatorBuilder").toKmClass()
-    assertThat(builderClass.flags.isInternal)
+    assertThat(builderClass.visibility == Visibility.INTERNAL)
       .isTrue()
   }
 
@@ -481,7 +482,7 @@ class VanillaProcessorTest {
     assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
     val builderClass = result.classLoader.loadClass("HelloDraftValidatorBuilder").toKmClass()
-    assertThat(builderClass.flags.isInternal)
+    assertThat(builderClass.visibility == Visibility.INTERNAL)
       .isTrue()
   }
 
@@ -510,7 +511,7 @@ class VanillaProcessorTest {
     assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
     val builderClass = result.classLoader.loadClass("HelloWorldFooDraftValidatorBuilder").toKmClass()
-    assertThat(builderClass.flags.isInternal)
+    assertThat(builderClass.visibility == Visibility.INTERNAL)
       .isTrue()
   }
 
@@ -612,6 +613,11 @@ class VanillaProcessorTest {
 
   // TODO generates property validator signature which has target field type if it differs from source
   // TODO gives an error if source or target is private,must be public/internal
+  private fun Class<*>.toKmClass(): KmClass {
+    val metadata = getAnnotation(Metadata::class.java)
+    return (KotlinClassMetadata.readStrict(metadata) as KotlinClassMetadata.Class).kmClass
+  }
+
   private fun assertIsValidatorType(type: KmType?) {
     assertThat(type?.classifier).isEqualTo(KmClassifier.Class("ru/dimsuz/vanilla/Validator"))
   }
@@ -628,7 +634,8 @@ class VanillaProcessorTest {
     return KotlinCompilation()
       .apply {
         workingDir = temporaryFolder.root
-        symbolProcessorProviders = listOf(VanillaProcessorProvider())
+        useKsp2()
+        symbolProcessorProviders = mutableListOf(VanillaProcessorProvider())
         inheritClassPath = true
         sources = sourceFiles.asList()
         verbose = false
@@ -636,7 +643,7 @@ class VanillaProcessorTest {
       }
   }
 
-  private fun compile(vararg sourceFiles: SourceFile): KotlinCompilation.Result {
+  private fun compile(vararg sourceFiles: SourceFile): JvmCompilationResult {
     return prepareCompilation(*sourceFiles).compile()
   }
 }
