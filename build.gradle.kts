@@ -55,3 +55,49 @@ subprojects {
     targetCompatibility = JavaVersion.VERSION_11
   }
 }
+
+configure(listOf(project(":library"), project(":processor"))) {
+  apply(plugin = "com.vanniktech.maven.publish")
+
+  group = providers.gradleProperty("pomGroupId").get()
+  version = providers.gradleProperty("versionName").get()
+
+  extensions.configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
+    coordinates(artifactId = property("pomArtifactId").toString())
+
+    publishToMavenCentral()
+    signAllPublications()
+
+    pom {
+      name.set(property("pomName").toString())
+      description.set(providers.gradleProperty("pomDescription"))
+      url.set(providers.gradleProperty("pomUrl"))
+
+      scm {
+        url.set(providers.gradleProperty("pomScmUrl"))
+        connection.set(providers.gradleProperty("pomScmConnection"))
+        developerConnection.set(providers.gradleProperty("pomScmDevConnection"))
+      }
+
+      licenses {
+        license {
+          name.set(providers.gradleProperty("pomLicenseName"))
+          url.set(providers.gradleProperty("pomLicenseUrl"))
+          distribution.set(providers.gradleProperty("pomLicenseDist"))
+        }
+      }
+
+      developers {
+        developer {
+          id.set("dimsuz")
+          name.set("Dmitry Suzdalev")
+        }
+        developer {
+          id.set("appKODE")
+          name.set("appKODE")
+          url.set("https://github.com/appKODE")
+        }
+      }
+    }
+  }
+}
