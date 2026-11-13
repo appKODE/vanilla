@@ -1,12 +1,11 @@
 dependencies {
-  implementation(kotlin("stdlib-jdk8"))
-  api("com.michael-bull.kotlin-result:kotlin-result:1.1.16")
+  api(libs.kotlin.result)
 
-  testImplementation("com.google.truth:truth:1.0.1")
+  testImplementation(libs.truth)
 }
 
-tasks {
-  compileKotlin {
-    kotlinOptions.moduleName = "vanilla-library"
+kotlin {
+  compilerOptions {
+    moduleName.set("vanilla-library")
   }
 }

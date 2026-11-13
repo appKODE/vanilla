@@ -1,10 +1,6 @@
 plugins {
   application
-  id("com.google.devtools.ksp")
-}
-
-repositories {
-  mavenCentral()
+  alias(libs.plugins.ksp)
 }
 
 application {
@@ -12,9 +8,8 @@ application {
 }
 
 dependencies {
-  implementation(kotlin("stdlib-jdk8"))
   implementation(project(":library"))
   ksp(project(":processor"))
 
-  testImplementation("com.google.truth:truth:1.0.1")
+  testImplementation(libs.truth)
 }

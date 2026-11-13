@@ -16,27 +16,25 @@ internal class VanillaProcessor(
   private val processingEnv: SymbolProcessorEnvironment,
 ) : SymbolProcessor {
 
-  private val modelPairs = mutableListOf<Result<ModelPair, Error>>()
-
   override fun process(resolver: Resolver): List<KSAnnotated> {
     val validatedAsSymbols = resolver
       .getSymbolsWithAnnotation(ValidatedAs::class.qualifiedName.orEmpty())
       .filterIsInstance<KSClassDeclaration>()
+      .toList()
 
-    val hasNext = validatedAsSymbols.iterator().hasNext()
+    // Symbols are analyzed and generated within the round they are received in: KSP2 invalidates
+    // them between rounds. Symbols with unresolved types are deferred to the next round.
+    val (ready, deferred) = validatedAsSymbols.partition { it.validate() }
+    if (ready.isEmpty()) return deferred
 
-    if (!hasNext) return emptyList()
-
-    validatedAsSymbols.forEach { ksClassDeclaration ->
+    val modelPairs = mutableListOf<Result<ModelPair, Error>>()
+    ready.forEach { ksClassDeclaration ->
       ksClassDeclaration.accept(
         ValidateAsVisitor { modelPairs += it },
         Unit
       )
     }
-    return validatedAsSymbols.filterNot { it.validate() }.toList()
-  }
 
-  override fun finish() {
     val result = modelPairs
       .combine()
       .flatMap { modelPairList ->
@@ -49,5 +47,6 @@ internal class VanillaProcessor(
     if (result is Err) {
       processingEnv.logger.error(result.error)
     }
+    return deferred
   }
 }

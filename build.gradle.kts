@@ -1,9 +1,7 @@
 plugins {
-  kotlin("jvm") version "1.9.10"
-  `maven-publish`
-  signing
-  id("org.jetbrains.dokka") version "1.9.0"
-  id("com.google.devtools.ksp") version "1.9.10-1.0.13" apply false
+  alias(libs.plugins.kotlin.jvm) apply false
+  alias(libs.plugins.ksp) apply false
+  alias(libs.plugins.vanniktech.mavenPublish) apply false
 }
 
 allprojects {
@@ -18,7 +16,7 @@ dependencies {
   ktlint("com.pinterest:ktlint:0.42.0")
 }
 
-val outputDir = "${project.buildDir}/reports/ktlint/"
+val outputDir = layout.buildDirectory.dir("reports/ktlint")
 val inputFiles = project.fileTree(mapOf("dir" to ".", "include" to "**/*.kt"))
 
 val ktlintCheck by tasks.creating(JavaExec::class) {
@@ -44,101 +42,60 @@ val ktlintFormat by tasks.creating(JavaExec::class) {
 }
 
 subprojects {
-  apply(plugin = "kotlin")
-  apply(plugin = "maven-publish")
-  apply(plugin = "org.jetbrains.dokka")
-  apply(plugin = "signing")
+  apply(plugin = "org.jetbrains.kotlin.jvm")
 
-  tasks {
-    compileKotlin {
-      kotlinOptions.jvmTarget = "11"
-    }
-    compileTestKotlin {
-      kotlinOptions.jvmTarget = "11"
+  // Consumers are Android apps: keep the JVM 11 bytecode floor, build on any JDK >= 11 (CI uses 17)
+  extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+    compilerOptions {
+      jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
   }
-
-  kotlin {
-    jvmToolchain {
-      languageVersion.set(JavaLanguageVersion.of(11))
-    }
+  extensions.configure<JavaPluginExtension> {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
   }
+}
 
-  val dokkaJar by tasks.creating(org.gradle.jvm.tasks.Jar::class) {
-    group = JavaBasePlugin.DOCUMENTATION_GROUP
-    archiveClassifier.set("javadoc")
-    from(tasks.dokkaHtml)
-  }
+configure(listOf(project(":library"), project(":processor"))) {
+  apply(plugin = "com.vanniktech.maven.publish")
 
-  val sourcesJar by tasks.creating(org.gradle.jvm.tasks.Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
-  }
+  group = providers.gradleProperty("pomGroupId").get()
+  version = providers.gradleProperty("versionName").get()
 
-  val pomArtifactId: String? by project
-  if (pomArtifactId != null) {
-    publishing {
-      publications {
-        create<MavenPublication>("maven") {
-          val versionName: String by project
-          val pomGroupId: String by project
-          groupId = pomGroupId
-          artifactId = pomArtifactId
-          version = versionName
-          from(components["java"])
+  extensions.configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
+    coordinates(artifactId = property("pomArtifactId").toString())
 
-          artifact(dokkaJar)
-          artifact(sourcesJar)
+    publishToMavenCentral()
+    signAllPublications()
 
-          pom {
-            val pomDescription: String by project
-            val pomUrl: String by project
-            val pomName: String by project
-            description.set(pomDescription)
-            url.set(pomUrl)
-            name.set(pomName)
-            scm {
-              val pomScmUrl: String by project
-              val pomScmConnection: String by project
-              val pomScmDevConnection: String by project
-              url.set(pomScmUrl)
-              connection.set(pomScmConnection)
-              developerConnection.set(pomScmDevConnection)
-            }
-            licenses {
-              license {
-                val pomLicenseName: String by project
-                val pomLicenseUrl: String by project
-                val pomLicenseDist: String by project
-                name.set(pomLicenseName)
-                url.set(pomLicenseUrl)
-                distribution.set(pomLicenseDist)
-              }
-            }
-            developers {
-              developer {
-                val pomDeveloperId: String by project
-                val pomDeveloperName: String by project
-                id.set(pomDeveloperId)
-                name.set(pomDeveloperName)
-              }
-            }
-          }
+    pom {
+      name.set(property("pomName").toString())
+      description.set(providers.gradleProperty("pomDescription"))
+      url.set(providers.gradleProperty("pomUrl"))
+
+      scm {
+        url.set(providers.gradleProperty("pomScmUrl"))
+        connection.set(providers.gradleProperty("pomScmConnection"))
+        developerConnection.set(providers.gradleProperty("pomScmDevConnection"))
+      }
+
+      licenses {
+        license {
+          name.set(providers.gradleProperty("pomLicenseName"))
+          url.set(providers.gradleProperty("pomLicenseUrl"))
+          distribution.set(providers.gradleProperty("pomLicenseDist"))
         }
       }
-      signing {
-        sign(publishing.publications["maven"])
-      }
-      repositories {
-        maven {
-          val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-          val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-          val versionName: String by project
-          url = if (versionName.endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-          credentials {
-            username = project.property("NEXUS_USERNAME")?.toString()
-            password = project.property("NEXUS_PASSWORD")?.toString()
-          }
+
+      developers {
+        developer {
+          id.set("dimsuz")
+          name.set("Dmitry Suzdalev")
+        }
+        developer {
+          id.set("appKODE")
+          name.set("appKODE")
+          url.set("https://github.com/appKODE")
         }
       }
     }

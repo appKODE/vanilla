@@ -1,5 +1,5 @@
 > Migrated from [github.com/dimsuz/vanilla](https://github.com/dimsuz/vanilla) (original author: Dmitry Suzdalev, MIT).
-> Published versions up to now: `ru.dimsuz:vanilla`. New releases will be published by appKODE under the `ru.kode` group.
+> Published versions up to 0.14.1: `ru.dimsuz:vanilla`. Starting from 0.15.0 releases are published by appKODE to Maven Central under the `ru.kode` group (`ru.kode:vanilla`, `ru.kode:vanilla-processor`). Java packages are unchanged.
 
 # Vanilla
 
@@ -198,8 +198,8 @@ will be any.
 ## Download
 
 ```
-implementation "ru.dimsuz:vanilla:0.14.1"
-ksp "ru.dimsuz:vanilla-processor:0.14.1"
+implementation "ru.kode:vanilla:0.15.0"
+ksp "ru.kode:vanilla-processor:0.15.0"
 ```
 
 ## License

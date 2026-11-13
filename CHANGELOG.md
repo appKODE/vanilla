@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.15.0
+
+* Support KSP2: validators are now generated per processing round instead of in `finish()`
+  (fixes `KaInvalidLifetimeOwnerAccessException`, google/ksp#2113)
+* Artifacts moved to the `ru.kode` group: `ru.kode:vanilla` and `ru.kode:vanilla-processor` (Java packages are unchanged)
+* Publish to Maven Central via the Central Portal
+* Update Kotlin to 2.3.20, KSP to 2.3.9, kotlinpoet to 2.2.0, Gradle to 9.4.1
+* Remove the `kotlinpoet-metadata` dependency from the processor
+
 ## 0.14.1 - 2023-09-01
 
 * Update kotlin to 1.9.10 and ksp to 1.9.10-1.0.13
